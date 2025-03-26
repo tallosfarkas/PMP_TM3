@@ -433,6 +433,8 @@ Summary_MM10 <- data.frame(
   CAR_Bad = Total_MM_10_Bad$Cumulative_Abnormal_Log_Returns* 100
 )
 
+write_xlsx(Summary_MM10, "Summary_MM10.xlsx")
+
 # Combine FF Results
 Summary_FF10 <- data.frame(
   Event_Day = -10:10,
@@ -443,6 +445,9 @@ Summary_FF10 <- data.frame(
   AR_Bad = Total_FF_10_Bad$Abnormal_Log_Return* 100,
   CAR_Bad = Total_FF_10_Bad$Cumulative_Abnormal_Log_Returns* 100
 )
+
+write_xlsx(Summary_FF10, "Summary_FF10.xlsx")
+
 
 
 ggplot(Summary_MM10, aes(x = Event_Day)) +
@@ -477,3 +482,6 @@ ggplot(Summary_FF10, aes(x = Event_Day)) +
     legend.title = element_blank(),
     legend.position = "bottom"
   )
+
+library(writexl)
+write_xlsx(t_stats_results, "t_stats.xlsx")
