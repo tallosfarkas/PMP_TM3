@@ -134,7 +134,7 @@ MM_t <- function(company, ann_date, ret = all_data, T1, mp = "Mkt_lr") {
 # For simplicity, the code below uses mp = "Mkt_lr" by default,
 # but you can modify to handle multiple factor columns if desired.
 ###############################################################################
-FF_t <- function(company, ann_date, ret = all_data, T1, mp = "Mkt_lr") {
+FF_t <- function(company, ann_date, ret = all_data, T1, mp = c("Mkt_lr", "SMB_lr", "HML_lr", "RMW_lr", "CMA_lr")) {
   
   company_lr <- paste0(gsub(" ", "_", company), "_lr")
   
@@ -157,7 +157,7 @@ FF_t <- function(company, ann_date, ret = all_data, T1, mp = "Mkt_lr") {
   sub_event_window <- tail(sub_event_window, T1*2 + 1)
   
   # 3) Rename columns
-  colnames(sub) <- c("date", "dep", "ind")
+  colnames(sub) <- c("date", "dep", "ind_1", "ind_2", "ind_3", "ind_4", "ind_5")
   
   # 4) If fewer than 100 non-NA observations, return NA
   if (length(na.omit(sub$dep)) < 100) {
@@ -165,13 +165,17 @@ FF_t <- function(company, ann_date, ret = all_data, T1, mp = "Mkt_lr") {
   }
   
   # 5) OLS: dep ~ ind
-  model <- lm(dep ~ ind, data = sub)
+  model <- lm(dep ~ . - date - dep, data = sub)
   res   <- var(residuals(model))
   alpha <- coef(model)[1]
   beta  <- coef(model)[2]
+  gamma = coef(model)[3]
+  delta = coef(model)[4]
+  epsilon = coef(model)[5]
+  zeta = coef(model)[6]
   
   # 6) Estimate normal returns
-  estimate <- alpha + beta * sub_event_window[[mp]]
+  estimate = alpha + beta*sub_event_window[['Mkt_lr']] + gamma*sub_event_window[['SMB_lr']] + delta*sub_event_window[['HML_lr']] + epsilon*sub_event_window[['RMW_lr']] + zeta*sub_event_window[['CMA_lr']]
   
   # 7) Abnormal + Cumulative abnormal returns
   abnormal_returns      <- sub_event_window[[company_lr]] - estimate
@@ -186,6 +190,11 @@ FF_t <- function(company, ann_date, ret = all_data, T1, mp = "Mkt_lr") {
     Actual_Log_Return = sub_event_window[[company_lr]],
     Estimated_Log_Return = estimate,
     Alpha = rep(alpha, T1*2 + 1),
+    Beta_Mkt = rep(beta, T1*2 + 1),
+    Beta_SMB = rep(gamma, T1*2 + 1),
+    Beta_HML = rep(delta, T1*2 + 1),
+    Beta_RMW = rep(epsilon, T1*2 + 1),
+    Beta_CMA = rep(zeta, T1*2 + 1),
     Beta = rep(beta, T1*2 + 1),
     Residuals = rep(res, T1*2 + 1)
   )
@@ -353,6 +362,7 @@ t_stats_results <- data.frame(
   NewsType       = character(),  # "Good", "Neutral", "Bad"
   p_value        = numeric(),    # p-value from the t-test
   Significant_5pct = logical(),  # TRUE if p < 0.05
+  Significant_1pct = logical(),
   stringsAsFactors = FALSE
 )
 
@@ -388,7 +398,7 @@ for (model in c("MM", "FF")) {
       t_out <- t.test(car_vals, mu = 0, alternative = "two.sided")
       pval <- t_out$p.value
       sig  <- pval < 0.05
-      
+      sig1  <- pval < 0.01
       # 5) Store the result
       t_stats_results <- rbind(
         t_stats_results,
@@ -398,6 +408,7 @@ for (model in c("MM", "FF")) {
           NewsType        = news_type,
           p_value         = pval,
           Significant_5pct = sig,
+          Significant_1pct = sig1,
           stringsAsFactors = FALSE
         )
       )
