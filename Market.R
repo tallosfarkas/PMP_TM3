@@ -36,7 +36,13 @@ events_df  <- events_clean  %>% mutate(event_date = as.Date(Ann_Date)) %>% filte
 # Merge returns + market factor once
 all_data <- left_join(returns_df, ff_df, by = "date") %>% filter(date <= as.Date('2024-12-31'))
 
-MM <- function(company, ann_date, ret = all_data, T1 = -10, mp = "Mkt_lr") {
+
+
+
+###################################################################################################################
+
+
+MM10 <- function(company, ann_date, ret = all_data, T1 = -10, mp = "Mkt_lr") {
   # The column name for the company is "<company>_lr"
   company_lr <- paste0(gsub(" ", "_", company), "_lr")
   
@@ -102,7 +108,7 @@ MM <- function(company, ann_date, ret = all_data, T1 = -10, mp = "Mkt_lr") {
   return(output)
 }
 
-MM_list <- data.frame(
+MM10_list <- data.frame(
   date = as.Date(character()),
   Company = character(),
   News = character(),
@@ -110,14 +116,14 @@ MM_list <- data.frame(
 )
 
 for (i in 1:nrow(events_df)) {
-  mm_result <- MM(events_df$Ticker[i], events_df$Ann_Date[i])
-  MM_list <- rbind(
-    MM_list,
+  mm10_result <- MM10(events_df$Ticker[i], events_df$Ann_Date[i])
+  MM10_list <- rbind(
+    MM10_list,
     data.frame(
       date = events_df$Ann_Date[i],
       Company = events_df$Ticker[i],
       News = events_df$news[i],
-        Output = I(list(mm_result))
+        Output = I(list(mm10_result))
     )
   )
   
@@ -125,7 +131,7 @@ for (i in 1:nrow(events_df)) {
 }
 
 ### FF5 ###
-FF <- function(company, ann_date, ret = all_data, T1 = -10, mp = c("Mkt_lr", "SMB_lr", "HML_lr", "RMW_lr", "CMA_lr")) {
+FF10 <- function(company, ann_date, ret = all_data, T1 = -10, mp = c("Mkt_lr", "SMB_lr", "HML_lr", "RMW_lr", "CMA_lr")) {
   # The column name for the company is "<company>_lr"
   company_lr <- paste0(gsub(" ", "_", company), "_lr")
   
@@ -200,7 +206,7 @@ FF <- function(company, ann_date, ret = all_data, T1 = -10, mp = c("Mkt_lr", "SM
 }
 
 
-FF_list <- data.frame(
+FF10_list <- data.frame(
   date = as.Date(character()),
   Company = character(),
   News = character(),
@@ -208,14 +214,14 @@ FF_list <- data.frame(
 )
 
 for (i in 1:nrow(events_df)) {
-  ff_result <- FF(events_df$Ticker[i], events_df$Ann_Date[i])
-  FF_list <- rbind(
-    FF_list,
+  ff10_result <- FF10(events_df$Ticker[i], events_df$Ann_Date[i])
+  FF10_list <- rbind(
+    FF10_list,
     data.frame(
       date = events_df$Ann_Date[i],
       Company = events_df$Ticker[i],
       News = events_df$news[i],
-      Output = I(list(ff_result))
+      Output = I(list(ff10_result))
     )
   )
   
@@ -223,94 +229,106 @@ for (i in 1:nrow(events_df)) {
 }
 
 # Drop na's from the MM_list and FF_list
-MM_list <- MM_list[!sapply(MM_list$Output, function(x) is.null(x) || all(is.na(x))), ]
-FF_list <- FF_list[!sapply(FF_list$Output, function(x) is.null(x) || all(is.na(x))), ]
+MM10_list <- MM10_list[!sapply(MM10_list$Output, function(x) is.null(x) || all(is.na(x))), ]
+FF10_list <- FF10_list[!sapply(FF10_list$Output, function(x) is.null(x) || all(is.na(x))), ]
 
 
 ### Divide MM_list results based on News type
-MM_good <- MM_list %>% filter(News == "good")
-MM_bad <- MM_list %>% filter(News == "bad")
-MM_neutral <- MM_list %>% filter(News == "no news")
+MM10_good <- MM10_list %>% filter(News == "good")
+MM10_bad <- MM10_list %>% filter(News == "bad")
+MM10_neutral <- MM10_list %>% filter(News == "no news")
 
-FF_good <- FF_list %>% filter(News == "good")
-FF_bad <- FF_list %>% filter(News == "bad")
-FF_neutral <- FF_list %>% filter(News == "no news")
+FF10_good <- FF10_list %>% filter(News == "good")
+FF10_bad <- FF10_list %>% filter(News == "bad")
+FF10_neutral <- FF10_list %>% filter(News == "no news")
 
 #MM_good is a dataframe containing dataframe in the 'Output' column, we need to unnest it and choose the first row from each one 
-Total_MM_Good <- data.frame(matrix(ncol = 2, nrow = 21, 0))
-colnames(Total_MM_Good) <- c("Abnormal_Log_Return", "Cumulative_Abnormal_Log_Returns")
-for (i in 1:nrow(MM_good)){
-  Total_MM_Good <- Total_MM_Good + MM_good$Output[[i]][, c("Abnormal_Log_Return", "Cumulative_Abnormal_Log_Returns")]
+Total_MM10_Good <- data.frame(matrix(ncol = 2, nrow = 21, 0))
+colnames(Total_MM10_Good) <- c("Abnormal_Log_Return", "Cumulative_Abnormal_Log_Returns")
+for (i in 1:nrow(MM10_good)){
+  Total_MM10_Good <- Total_MM10_Good + MM10_good$Output[[i]][, c("Abnormal_Log_Return", "Cumulative_Abnormal_Log_Returns")]
 }
 
-Total_MM_Good <- Total_MM_Good / nrow(MM_good)
+Total_MM10_Good <- Total_MM10_Good / nrow(MM10_good)
 
-Total_MM_Bad <- data.frame(matrix(ncol = 2, nrow = 21, 0))
-colnames(Total_MM_Bad) <- c("Abnormal_Log_Return", "Cumulative_Abnormal_Log_Returns")
-for (i in 1:nrow(MM_bad)){
-  Total_MM_Bad <- Total_MM_Bad + MM_bad$Output[[i]][, c("Abnormal_Log_Return", "Cumulative_Abnormal_Log_Returns")]
+Total_MM10_Bad <- data.frame(matrix(ncol = 2, nrow = 21, 0))
+colnames(Total_MM10_Bad) <- c("Abnormal_Log_Return", "Cumulative_Abnormal_Log_Returns")
+for (i in 1:nrow(MM10_bad)){
+  Total_MM10_Bad <- Total_MM10_Bad + MM10_bad$Output[[i]][, c("Abnormal_Log_Return", "Cumulative_Abnormal_Log_Returns")]
 }
 
-Total_MM_Bad <- Total_MM_Bad / nrow(MM_bad)
+Total_MM10_Bad <- Total_MM10_Bad / nrow(MM10_bad)
 
-Total_MM_Neutral <- data.frame(matrix(ncol = 2, nrow = 21, 0))
-colnames(Total_MM_Neutral) <- c("Abnormal_Log_Return", "Cumulative_Abnormal_Log_Returns")
-for (i in 1:nrow(MM_neutral)){
-  Total_MM_Neutral <- Total_MM_Neutral + MM_neutral$Output[[i]][, c("Abnormal_Log_Return", "Cumulative_Abnormal_Log_Returns")]
+Total_MM10_Neutral <- data.frame(matrix(ncol = 2, nrow = 21, 0))
+colnames(Total_MM10_Neutral) <- c("Abnormal_Log_Return", "Cumulative_Abnormal_Log_Returns")
+for (i in 1:nrow(MM10_neutral)){
+  Total_MM10_Neutral <- Total_MM10_Neutral + MM10_neutral$Output[[i]][, c("Abnormal_Log_Return", "Cumulative_Abnormal_Log_Returns")]
 }
 
-Total_MM_Neutral <- Total_MM_Neutral / nrow(MM_neutral)
+Total_MM10_Neutral <- Total_MM10_Neutral / nrow(MM10_neutral)
 
 # FF Data
 
-Total_FF_Good <- data.frame(matrix(ncol = 2, nrow = 21, 0))
-colnames(Total_FF_Good) <- c("Abnormal_Log_Return", "Cumulative_Abnormal_Log_Returns")
+Total_FF10_Good <- data.frame(matrix(ncol = 2, nrow = 21, 0))
+colnames(Total_FF10_Good) <- c("Abnormal_Log_Return", "Cumulative_Abnormal_Log_Returns")
 
-for (i in 1:nrow(FF_good)){
-  Total_FF_Good <- Total_FF_Good + FF_good$Output[[i]][, c("Abnormal_Log_Return", "Cumulative_Abnormal_Log_Returns")]
+for (i in 1:nrow(FF10_good)){
+  Total_FF10_Good <- Total_FF10_Good + FF10_good$Output[[i]][, c("Abnormal_Log_Return", "Cumulative_Abnormal_Log_Returns")]
 }
 
-Total_FF_Good <- Total_FF_Good / nrow(FF_good)
+Total_FF10_Good <- Total_FF10_Good / nrow(FF10_good)
 
-Total_FF_Bad <- data.frame(matrix(ncol = 2, nrow = 21, 0))
-colnames(Total_FF_Bad) <- c("Abnormal_Log_Return", "Cumulative_Abnormal_Log_Returns")
+Total_FF10_Bad <- data.frame(matrix(ncol = 2, nrow = 21, 0))
+colnames(Total_FF10_Bad) <- c("Abnormal_Log_Return", "Cumulative_Abnormal_Log_Returns")
 
-for (i in 1:nrow(FF_bad)){
-  Total_FF_Bad <- Total_FF_Bad + FF_bad$Output[[i]][, c("Abnormal_Log_Return", "Cumulative_Abnormal_Log_Returns")]
+for (i in 1:nrow(FF10_bad)){
+  Total_FF10_Bad <- Total_FF10_Bad + FF10_bad$Output[[i]][, c("Abnormal_Log_Return", "Cumulative_Abnormal_Log_Returns")]
 }
 
-Total_FF_Bad <- Total_FF_Bad / nrow(FF_bad)
+Total_FF10_Bad <- Total_FF10_Bad / nrow(FF10_bad)
 
-Total_FF_Neutral <- data.frame(matrix(ncol = 2, nrow = 21, 0))
-colnames(Total_FF_Neutral) <- c("Abnormal_Log_Return", "Cumulative_Abnormal_Log_Returns")
+Total_FF10_Neutral <- data.frame(matrix(ncol = 2, nrow = 21, 0))
+colnames(Total_FF10_Neutral) <- c("Abnormal_Log_Return", "Cumulative_Abnormal_Log_Returns")
 
-for (i in 1:nrow(FF_neutral)){
-  Total_FF_Neutral <- Total_FF_Neutral + FF_neutral$Output[[i]][, c("Abnormal_Log_Return", "Cumulative_Abnormal_Log_Returns")]
+for (i in 1:nrow(FF10_neutral)){
+  Total_FF10_Neutral <- Total_FF10_Neutral + FF10_neutral$Output[[i]][, c("Abnormal_Log_Return", "Cumulative_Abnormal_Log_Returns")]
 }
 
-Total_FF_Neutral <- Total_FF_Neutral / nrow(FF_neutral)
+Total_FF10_Neutral <- Total_FF10_Neutral / nrow(FF10_neutral)
+
+
+t_stats_CAR_FF10_Good <- t.test(Total_FF10_Good$Cumulative_Abnormal_Log_Returns, mu = 0, alternative = "two.sided")$p.value
+t_stats_CAR_FF10_Neutral <- t.test(Total_FF10_Neutral$Cumulative_Abnormal_Log_Returns, mu = 0, alternative = "two.sided")$p.value
+t_stats_CAR_FF10_Bad <- t.test(Total_FF10_Bad$Cumulative_Abnormal_Log_Returns, mu = 0, alternative = "two.sided")$p.value
+
+t_stats_CAR_MM10_Good <- t.test(Total_MM10_Good$Cumulative_Abnormal_Log_Returns, mu = 0, alternative = "two.sided")$p.value
+t_stats_CAR_MM10_Neutral <- t.test(Total_MM10_Neutral$Cumulative_Abnormal_Log_Returns, mu = 0, alternative = "two.sided")$p.value
+t_stats_CAR_MM10_Bad <- t.test(Total_MM10_Bad$Cumulative_Abnormal_Log_Returns, mu = 0, alternative = "two.sided")$p.value
+
+
+#####################################################################################################################################
 
 
 # Combine MM Results
-Summary_MM <- data.frame(
+Summary_MM10 <- data.frame(
   Event_Day = -10:10,
-  AR_Good = Total_MM_Good$Abnormal_Log_Return * 100,
-  CAR_Good = Total_MM_Good$Cumulative_Abnormal_Log_Returns* 100,
-  AR_Neutral = Total_MM_Neutral$Abnormal_Log_Return* 100,
-  CAR_Neutral = Total_MM_Neutral$Cumulative_Abnormal_Log_Returns* 100,
-  AR_Bad = Total_MM_Bad$Abnormal_Log_Return* 100,
-  CAR_Bad = Total_MM_Bad$Cumulative_Abnormal_Log_Returns* 100
+  AR_Good = Total_MM10_Good$Abnormal_Log_Return * 100,
+  CAR_Good = Total_MM10_Good$Cumulative_Abnormal_Log_Returns* 100,
+  AR_Neutral = Total_MM10_Neutral$Abnormal_Log_Return* 100,
+  CAR_Neutral = Total_MM10_Neutral$Cumulative_Abnormal_Log_Returns* 100,
+  AR_Bad = Total_MM10_Bad$Abnormal_Log_Return* 100,
+  CAR_Bad = Total_MM10_Bad$Cumulative_Abnormal_Log_Returns* 100
 )
 
 # Combine FF Results
-Summary_FF <- data.frame(
+Summary_FF10 <- data.frame(
   Event_Day = -10:10,
-  AR_Good = Total_FF_Good$Abnormal_Log_Return* 100,
-  CAR_Good = Total_FF_Good$Cumulative_Abnormal_Log_Returns* 100,
-  AR_Neutral = Total_FF_Neutral$Abnormal_Log_Return* 100,
-  CAR_Neutral = Total_FF_Neutral$Cumulative_Abnormal_Log_Returns* 100,
-  AR_Bad = Total_FF_Bad$Abnormal_Log_Return* 100,
-  CAR_Bad = Total_FF_Bad$Cumulative_Abnormal_Log_Returns* 100
+  AR_Good = Total_FF10_Good$Abnormal_Log_Return* 100,
+  CAR_Good = Total_FF10_Good$Cumulative_Abnormal_Log_Returns* 100,
+  AR_Neutral = Total_FF10_Neutral$Abnormal_Log_Return* 100,
+  CAR_Neutral = Total_FF10_Neutral$Cumulative_Abnormal_Log_Returns* 100,
+  AR_Bad = Total_FF10_Bad$Abnormal_Log_Return* 100,
+  CAR_Bad = Total_FF10_Bad$Cumulative_Abnormal_Log_Returns* 100
 )
 
 
@@ -319,7 +337,7 @@ library(dplyr)
 library(tidyr)
 
 
-ggplot(Summary_MM, aes(x = Event_Day)) +
+ggplot(Summary_MM10, aes(x = Event_Day)) +
   geom_line(aes(y = CAR_Good, color = "Good News"), size = 1) +
   geom_line(aes(y = CAR_Neutral, color = "Neutral News"), size = 1, linetype = "dashed") +
   geom_line(aes(y = CAR_Bad, color = "Bad News"), size = 1, linetype = "dotted") +
@@ -336,7 +354,7 @@ ggplot(Summary_MM, aes(x = Event_Day)) +
   )
 
 
-ggplot(Summary_FF, aes(x = Event_Day)) +
+ggplot(Summary_FF10, aes(x = Event_Day)) +
   geom_line(aes(y = CAR_Good, color = "Good News"), size = 1) +
   geom_line(aes(y = CAR_Neutral, color = "Neutral News"), size = 1, linetype = "dashed") +
   geom_line(aes(y = CAR_Bad, color = "Bad News"), size = 1, linetype = "dotted") +
@@ -354,90 +372,91 @@ ggplot(Summary_FF, aes(x = Event_Day)) +
 
 #### MM windows for different levels ####
 
-MM <- function(company, ann_date, ret = all_data, T1 = -10, mp = "Mkt_lr") {
-  # The column name for the company is "<company>_lr"
-  company_lr <- paste0(gsub(" ", "_", company), "_lr")
-  
-  # 1) Filter rows up to ann_date
-  # 2) Select only date, company_lr, and mp columns
-  # 3) Sort by date
-  sub <- ret %>%
-    filter(date <= ann_date) %>%
-    select(date, all_of(company_lr), all_of(mp)) %>%
-    arrange(date)
-  
-  # Keep the last (250 - T1) rows, then keep the first 250 rows of that
-  # (the logic behind T1 = -10 might be your "event" offset)
-  sub <- tail(sub, 250 - T1)
-  sub <- head(sub, 250)
-  
-  # Obtain the row number that corresponds to ann_date
-  row_num_for_date <- which(all_data$date == ann_date) + 10
-  
-  ann_date_plus_ten <- ret$date[row_num_for_date]
-  
-  sub_event_window <- ret %>% 
-    filter(date <= ann_date_plus_ten) %>%
-    select(date, all_of(company_lr), all_of(mp)) %>%
-    arrange(date)
-  
-  sub_event_window <- tail(sub_event_window, 21)
-  
-  # Rename columns for the regression
-  colnames(sub) <- c("date", "dep", "ind")
-  
-  # If fewer than 100 non-NA observations, return NA
-  if (length(na.omit(sub$dep)) < 100) {
-    return(NA)
-  }
-  
-  # Run OLS: dep ~ ind
-  model <- lm(dep ~ ind, data = sub)
-  res <- var(residuals(model))
-  alpha = coef(model)[1]
-  beta = coef(model)[2]
-  
-  # Estimate the returns
-  estimate = alpha + beta*sub_event_window[[mp]]
-
-  abnormal_returns <- sub_event_window[[company_lr]] - estimate
-
-  cum_abnormal_returns <- cumsum(abnormal_returns)
-  
-  # Create a Data Frame with the Dates, Abnormal Returns,Actual Returns, Estimated Returns, Alpha, Beta, and Residuals
-  output <- data.frame(
-    Date = sub_event_window$date,
-    Company = rep(company, 21),
-    Abnormal_Log_Return = abnormal_returns,
-    Cumulative_Abnormal_Log_Returns = cum_abnormal_returns,
-    Actual_Log_Return = sub_event_window[[company_lr]],
-    Estimated_Log_Return = estimate,
-    Alpha = rep(alpha, 21),
-    Beta = rep(beta, 21),
-    Residuals = rep(res, 21)
-  )
-  
-  return(output)
-}
-
-MM_list <- data.frame(
-  date = as.Date(character()),
-  Company = character(),
-  News = character(),
-  Output = I(list())
-)
-
-for (i in 1:nrow(events_df)) {
-  mm_result <- MM(events_df$Ticker[i], events_df$Ann_Date[i])
-  MM_list <- rbind(
-    MM_list,
-    data.frame(
-      date = events_df$Ann_Date[i],
-      Company = events_df$Ticker[i],
-      News = events_df$news[i],
-      Output = I(list(mm_result))
-    )
-  )
-  
-  print(paste0("Finished ", events_df$Ticker[i], " at ", events_df$Ann_Date[i]))
-}
+#MM <- function(company, ann_date, ret = all_data, T1 = -10, mp = "Mkt_lr") {
+#  # The column name for the company is "<company>_lr"
+#  company_lr <- paste0(gsub(" ", "_", company), "_lr")
+#  
+#  # 1) Filter rows up to ann_date
+#  # 2) Select only date, company_lr, and mp columns
+#  # 3) Sort by date
+#  sub <- ret %>%
+#    filter(date <= ann_date) %>%
+#    select(date, all_of(company_lr), all_of(mp)) %>%
+#    arrange(date)
+#  
+#  # Keep the last (250 - T1) rows, then keep the first 250 rows of that
+#  # (the logic behind T1 = -10 might be your "event" offset)
+#  sub <- tail(sub, 250 - T1)
+#  sub <- head(sub, 250)
+#  
+#  # Obtain the row number that corresponds to ann_date
+#  row_num_for_date <- which(all_data$date == ann_date) + 10
+#  
+#  ann_date_plus_ten <- ret$date[row_num_for_date]
+#  
+#  sub_event_window <- ret %>% 
+#    filter(date <= ann_date_plus_ten) %>%
+#    select(date, all_of(company_lr), all_of(mp)) %>%
+#    arrange(date)
+#  
+#  sub_event_window <- tail(sub_event_window, 21)
+#  
+#  # Rename columns for the regression
+#  colnames(sub) <- c("date", "dep", "ind")
+#  
+#  # If fewer than 100 non-NA observations, return NA
+#  if (length(na.omit(sub$dep)) < 100) {
+#    return(NA)
+#  }
+#  
+#  # Run OLS: dep ~ ind
+#  model <- lm(dep ~ ind, data = sub)
+#  res <- var(residuals(model))
+#  alpha = coef(model)[1]
+#  beta = coef(model)[2]
+#  
+#  # Estimate the returns
+#  estimate = alpha + beta*sub_event_window[[mp]]
+#
+#  abnormal_returns <- sub_event_window[[company_lr]] - estimate
+#
+#  cum_abnormal_returns <- cumsum(abnormal_returns)
+#  
+#  # Create a Data Frame with the Dates, Abnormal Returns,Actual Returns, Estimated Returns, Alpha, Beta, and Residuals
+#  output <- data.frame(
+#    Date = sub_event_window$date,
+#    Company = rep(company, 21),
+#    Abnormal_Log_Return = abnormal_returns,
+#    Cumulative_Abnormal_Log_Returns = cum_abnormal_returns,
+#    Actual_Log_Return = sub_event_window[[company_lr]],
+#    Estimated_Log_Return = estimate,
+#    Alpha = rep(alpha, 21),
+#    Beta = rep(beta, 21),
+#    Residuals = rep(res, 21)
+#  )
+#  
+#  return(output)
+#}
+#
+#MM_list <- data.frame(
+#  date = as.Date(character()),
+#  Company = character(),
+#  News = character(),
+#  Output = I(list())
+#)
+#
+#for (i in 1:nrow(events_df)) {
+#  mm_result <- MM(events_df$Ticker[i], events_df$Ann_Date[i])
+#  MM_list <- rbind(
+#    MM_list,
+#    data.frame(
+#      date = events_df$Ann_Date[i],
+#      Company = events_df$Ticker[i],
+#      News = events_df$news[i],
+#      Output = I(list(mm_result))
+#    )
+#  )
+#  
+#  print(paste0("Finished ", events_df$Ticker[i], " at ", events_df$Ann_Date[i]))
+#}
+#
