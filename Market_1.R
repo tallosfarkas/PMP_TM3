@@ -1,7 +1,7 @@
 ###################################################################################################################
 
 
-MM5 <- function(company, ann_date, ret = all_data, T1 = -5, mp = "Mkt_lr") {
+MM1 <- function(company, ann_date, ret = all_data, T1 = -1, mp = "Mkt_lr") {
   # The column name for the company is "<company>_lr"
   company_lr <- paste0(gsub(" ", "_", company), "_lr")
   
@@ -14,12 +14,12 @@ MM5 <- function(company, ann_date, ret = all_data, T1 = -5, mp = "Mkt_lr") {
     arrange(date)
   
   # Keep the last (250 - T1) rows, then keep the first 250 rows of that
-  # (the logic behind T1 = -10 might be your "event" offset)
+  # (the logic behind T1 = -1 might be your "event" offset)
   sub <- tail(sub, 250 - T1)
   sub <- head(sub, 250)
   
   # Obtain the row number that corresponds to ann_date
-  row_num_for_date <- which(all_data$date == ann_date) + 5
+  row_num_for_date <- which(all_data$date == ann_date) + 1
   
   ann_date_plus_ten <- ret$date[row_num_for_date]
   
@@ -28,12 +28,12 @@ MM5 <- function(company, ann_date, ret = all_data, T1 = -5, mp = "Mkt_lr") {
     select(date, all_of(company_lr), all_of(mp)) %>%
     arrange(date)
   
-  sub_event_window <- tail(sub_event_window, 11)
+  sub_event_window <- tail(sub_event_window, 3)
   
   # Rename columns for the regression
   colnames(sub) <- c("date", "dep", "ind")
   
-  # If fewer than 100 non-NA observations, return NA
+  # If fewer than 10 non-NA observations, return NA
   if (length(na.omit(sub$dep)) < 100) {
     return(NA)
   }
@@ -54,20 +54,20 @@ MM5 <- function(company, ann_date, ret = all_data, T1 = -5, mp = "Mkt_lr") {
   # Create a Data Frame with the Dates, Abnormal Returns,Actual Returns, Estimated Returns, Alpha, Beta, and Residuals
   output <- data.frame(
     Date = sub_event_window$date,
-    Company = rep(company, 11),
+    Company = rep(company, 3),
     Abnormal_Log_Return = abnormal_returns,
     Cumulative_Abnormal_Log_Returns = cum_abnormal_returns,
     Actual_Log_Return = sub_event_window[[company_lr]],
     Estimated_Log_Return = estimate,
-    Alpha = rep(alpha, 11),
-    Beta = rep(beta, 11),
-    Residuals = rep(res, 11)
+    Alpha = rep(alpha, 3),
+    Beta = rep(beta, 3),
+    Residuals = rep(res, 3)
   )
   
   return(output)
 }
 
-MM5_list <- data.frame(
+MM1_list <- data.frame(
   date = as.Date(character()),
   Company = character(),
   News = character(),
@@ -75,14 +75,14 @@ MM5_list <- data.frame(
 )
 
 for (i in 1:nrow(events_df)) {
-  mm5_result <- MM5(events_df$Ticker[i], events_df$Ann_Date[i])
-  MM5_list <- rbind(
-    MM5_list,
+  mm1_result <- MM1(events_df$Ticker[i], events_df$Ann_Date[i])
+  MM1_list <- rbind(
+    MM1_list,
     data.frame(
       date = events_df$Ann_Date[i],
       Company = events_df$Ticker[i],
       News = events_df$news[i],
-      Output = I(list(mm5_result))
+      Output = I(list(mm1_result))
     )
   )
   
@@ -90,7 +90,7 @@ for (i in 1:nrow(events_df)) {
 }
 
 ### FF5 ###
-FF5 <- function(company, ann_date, ret = all_data, T1 = -5, mp = c("Mkt_lr", "SMB_lr", "HML_lr", "RMW_lr", "CMA_lr")) {
+FF1 <- function(company, ann_date, ret = all_data, T1 = -1, mp = c("Mkt_lr", "SMB_lr", "HML_lr", "RMW_lr", "CMA_lr")) {
   # The column name for the company is "<company>_lr"
   company_lr <- paste0(gsub(" ", "_", company), "_lr")
   
@@ -103,12 +103,12 @@ FF5 <- function(company, ann_date, ret = all_data, T1 = -5, mp = c("Mkt_lr", "SM
     arrange(date)
   
   # Keep the last (250 - T1) rows, then keep the first 250 rows of that
-  # (the logic behind T1 = -10 might be your "event" offset)
+  # (the logic behind T1 = -1 might be your "event" offset)
   sub <- tail(sub, 250 - T1)
   sub <- head(sub, 250)
   
   # Obtain the row number that corresponds to ann_date
-  row_num_for_date <- which(all_data$date == ann_date) + 5
+  row_num_for_date <- which(all_data$date == ann_date) + 1
   
   ann_date_plus_ten <- ret$date[row_num_for_date]
   
@@ -117,12 +117,12 @@ FF5 <- function(company, ann_date, ret = all_data, T1 = -5, mp = c("Mkt_lr", "SM
     select(date, all_of(company_lr), all_of(mp)) %>%
     arrange(date)
   
-  sub_event_window <- tail(sub_event_window, 11)
+  sub_event_window <- tail(sub_event_window, 3)
   
   # Rename columns for the regression
   colnames(sub) <- c("date", "dep", "ind_1", "ind_2", "ind_3", "ind_4", "ind_5")
   
-  # If fewer than 100 non-NA observations, return NA
+  # If fewer than 10 non-NA observations, return NA
   if (length(na.omit(sub$dep)) < 100) {
     return(NA)
   }
@@ -147,25 +147,25 @@ FF5 <- function(company, ann_date, ret = all_data, T1 = -5, mp = c("Mkt_lr", "SM
   # Create a Data Frame with the Dates, Abnormal Returns,Actual Returns, Estimated Returns, Alpha, Beta, and Residuals
   output <- data.frame(
     Date = sub_event_window$date,
-    Company = rep(company, 11),
+    Company = rep(company, 3),
     Abnormal_Log_Return = abnormal_returns,
     Cumulative_Abnormal_Log_Returns = cum_abnormal_returns,
     Actual_Log_Return = sub_event_window[[company_lr]],
     Estimated_Log_Return = estimate,
-    Alpha = rep(alpha, 11),
-    Beta_Mkt = rep(beta, 11),
-    Beta_SMB = rep(gamma, 11),
-    Beta_HML = rep(delta, 11),
-    Beta_RMW = rep(epsilon, 11),
-    Beta_CMA = rep(zeta, 11),
-    Residuals = rep(res, 11)
+    Alpha = rep(alpha, 3),
+    Beta_Mkt = rep(beta, 3),
+    Beta_SMB = rep(gamma, 3),
+    Beta_HML = rep(delta, 3),
+    Beta_RMW = rep(epsilon, 3),
+    Beta_CMA = rep(zeta, 3),
+    Residuals = rep(res, 3)
   )
   
   return(output)
 }
 
 
-FF5_list <- data.frame(
+FF1_list <- data.frame(
   date = as.Date(character()),
   Company = character(),
   News = character(),
@@ -173,14 +173,14 @@ FF5_list <- data.frame(
 )
 
 for (i in 1:nrow(events_df)) {
-  ff5_result <- FF5(events_df$Ticker[i], events_df$Ann_Date[i])
-  FF5_list <- rbind(
-    FF5_list,
+  ff1_result <- FF1(events_df$Ticker[i], events_df$Ann_Date[i])
+  FF1_list <- rbind(
+    FF1_list,
     data.frame(
       date = events_df$Ann_Date[i],
       Company = events_df$Ticker[i],
       News = events_df$news[i],
-      Output = I(list(ff5_result))
+      Output = I(list(ff1_result))
     )
   )
   
@@ -188,81 +188,81 @@ for (i in 1:nrow(events_df)) {
 }
 
 # Drop na's from the MM_list and FF_list
-MM5_list <- MM5_list[!sapply(MM5_list$Output, function(x) is.null(x) || all(is.na(x))), ]
-FF5_list <- FF5_list[!sapply(FF5_list$Output, function(x) is.null(x) || all(is.na(x))), ]
+MM1_list <- MM1_list[!sapply(MM1_list$Output, function(x) is.null(x) || all(is.na(x))), ]
+FF1_list <- FF1_list[!sapply(FF1_list$Output, function(x) is.null(x) || all(is.na(x))), ]
 
 
 ### Divide MM_list results based on News type
-MM5_good <- MM5_list %>% filter(News == "good")
-MM5_bad <- MM5_list %>% filter(News == "bad")
-MM5_neutral <- MM5_list %>% filter(News == "no news")
+MM1_good <- MM1_list %>% filter(News == "good")
+MM1_bad <- MM1_list %>% filter(News == "bad")
+MM1_neutral <- MM1_list %>% filter(News == "no news")
 
-FF5_good <- FF5_list %>% filter(News == "good")
-FF5_bad <- FF5_list %>% filter(News == "bad")
-FF5_neutral <- FF5_list %>% filter(News == "no news")
+FF1_good <- FF1_list %>% filter(News == "good")
+FF1_bad <- FF1_list %>% filter(News == "bad")
+FF1_neutral <- FF1_list %>% filter(News == "no news")
 
 #MM_good is a dataframe containing dataframe in the 'Output' column, we need to unnest it and choose the first row from each one 
-Total_MM5_Good <- data.frame(matrix(ncol = 2, nrow = 11, 0))
-colnames(Total_MM5_Good) <- c("Abnormal_Log_Return", "Cumulative_Abnormal_Log_Returns")
-for (i in 1:nrow(MM5_good)){
-  Total_MM5_Good <- Total_MM5_Good + MM5_good$Output[[i]][, c("Abnormal_Log_Return", "Cumulative_Abnormal_Log_Returns")]
+Total_MM1_Good <- data.frame(matrix(ncol = 2, nrow = 3, 0))
+colnames(Total_MM1_Good) <- c("Abnormal_Log_Return", "Cumulative_Abnormal_Log_Returns")
+for (i in 1:nrow(MM1_good)){
+  Total_MM1_Good <- Total_MM1_Good + MM1_good$Output[[i]][, c("Abnormal_Log_Return", "Cumulative_Abnormal_Log_Returns")]
 }
 
-Total_MM5_Good <- Total_MM5_Good / nrow(MM5_good)
+Total_MM1_Good <- Total_MM1_Good / nrow(MM1_good)
 
-Total_MM5_Bad <- data.frame(matrix(ncol = 2, nrow = 11, 0))
-colnames(Total_MM5_Bad) <- c("Abnormal_Log_Return", "Cumulative_Abnormal_Log_Returns")
-for (i in 1:nrow(MM5_bad)){
-  Total_MM5_Bad <- Total_MM5_Bad + MM5_bad$Output[[i]][, c("Abnormal_Log_Return", "Cumulative_Abnormal_Log_Returns")]
+Total_MM1_Bad <- data.frame(matrix(ncol = 2, nrow = 3, 0))
+colnames(Total_MM1_Bad) <- c("Abnormal_Log_Return", "Cumulative_Abnormal_Log_Returns")
+for (i in 1:nrow(MM1_bad)){
+  Total_MM1_Bad <- Total_MM1_Bad + MM1_bad$Output[[i]][, c("Abnormal_Log_Return", "Cumulative_Abnormal_Log_Returns")]
 }
 
-Total_MM5_Bad <- Total_MM5_Bad / nrow(MM5_bad)
+Total_MM1_Bad <- Total_MM1_Bad / nrow(MM1_bad)
 
-Total_MM5_Neutral <- data.frame(matrix(ncol = 2, nrow = 11, 0))
-colnames(Total_MM5_Neutral) <- c("Abnormal_Log_Return", "Cumulative_Abnormal_Log_Returns")
-for (i in 1:nrow(MM5_neutral)){
-  Total_MM5_Neutral <- Total_MM5_Neutral + MM5_neutral$Output[[i]][, c("Abnormal_Log_Return", "Cumulative_Abnormal_Log_Returns")]
+Total_MM1_Neutral <- data.frame(matrix(ncol = 2, nrow = 3, 0))
+colnames(Total_MM1_Neutral) <- c("Abnormal_Log_Return", "Cumulative_Abnormal_Log_Returns")
+for (i in 1:nrow(MM1_neutral)){
+  Total_MM1_Neutral <- Total_MM1_Neutral + MM1_neutral$Output[[i]][, c("Abnormal_Log_Return", "Cumulative_Abnormal_Log_Returns")]
 }
 
-Total_MM5_Neutral <- Total_MM5_Neutral / nrow(MM5_neutral)
+Total_MM1_Neutral <- Total_MM1_Neutral / nrow(MM1_neutral)
 
 # FF Data
 
-Total_FF5_Good <- data.frame(matrix(ncol = 2, nrow = 11, 0))
-colnames(Total_FF5_Good) <- c("Abnormal_Log_Return", "Cumulative_Abnormal_Log_Returns")
+Total_FF1_Good <- data.frame(matrix(ncol = 2, nrow = 3, 0))
+colnames(Total_FF1_Good) <- c("Abnormal_Log_Return", "Cumulative_Abnormal_Log_Returns")
 
-for (i in 1:nrow(FF5_good)){
-  Total_FF5_Good <- Total_FF5_Good + FF5_good$Output[[i]][, c("Abnormal_Log_Return", "Cumulative_Abnormal_Log_Returns")]
+for (i in 1:nrow(FF1_good)){
+  Total_FF1_Good <- Total_FF1_Good + FF1_good$Output[[i]][, c("Abnormal_Log_Return", "Cumulative_Abnormal_Log_Returns")]
 }
 
-Total_FF5_Good <- Total_FF5_Good / nrow(FF5_good)
+Total_FF1_Good <- Total_FF1_Good / nrow(FF1_good)
 
-Total_FF5_Bad <- data.frame(matrix(ncol = 2, nrow = 11, 0))
-colnames(Total_FF5_Bad) <- c("Abnormal_Log_Return", "Cumulative_Abnormal_Log_Returns")
+Total_FF1_Bad <- data.frame(matrix(ncol = 2, nrow = 3, 0))
+colnames(Total_FF1_Bad) <- c("Abnormal_Log_Return", "Cumulative_Abnormal_Log_Returns")
 
-for (i in 1:nrow(FF5_bad)){
-  Total_FF5_Bad <- Total_FF5_Bad + FF5_bad$Output[[i]][, c("Abnormal_Log_Return", "Cumulative_Abnormal_Log_Returns")]
+for (i in 1:nrow(FF1_bad)){
+  Total_FF1_Bad <- Total_FF1_Bad + FF1_bad$Output[[i]][, c("Abnormal_Log_Return", "Cumulative_Abnormal_Log_Returns")]
 }
 
-Total_FF5_Bad <- Total_FF5_Bad / nrow(FF5_bad)
+Total_FF1_Bad <- Total_FF1_Bad / nrow(FF1_bad)
 
-Total_FF5_Neutral <- data.frame(matrix(ncol = 2, nrow = 11, 0))
-colnames(Total_FF5_Neutral) <- c("Abnormal_Log_Return", "Cumulative_Abnormal_Log_Returns")
+Total_FF1_Neutral <- data.frame(matrix(ncol = 2, nrow = 3, 0))
+colnames(Total_FF1_Neutral) <- c("Abnormal_Log_Return", "Cumulative_Abnormal_Log_Returns")
 
-for (i in 1:nrow(FF5_neutral)){
-  Total_FF5_Neutral <- Total_FF5_Neutral + FF5_neutral$Output[[i]][, c("Abnormal_Log_Return", "Cumulative_Abnormal_Log_Returns")]
+for (i in 1:nrow(FF1_neutral)){
+  Total_FF1_Neutral <- Total_FF1_Neutral + FF1_neutral$Output[[i]][, c("Abnormal_Log_Return", "Cumulative_Abnormal_Log_Returns")]
 }
 
-Total_FF5_Neutral <- Total_FF5_Neutral / nrow(FF5_neutral)
+Total_FF1_Neutral <- Total_FF1_Neutral / nrow(FF1_neutral)
 
 
-t_stats_CAR_FF5_Good <- t.test(Total_FF5_Good$Cumulative_Abnormal_Log_Returns, mu = 0, alternative = "two.sided")$p.value
-t_stats_CAR_FF5_Neutral <- t.test(Total_FF5_Neutral$Cumulative_Abnormal_Log_Returns, mu = 0, alternative = "two.sided")$p.value
-t_stats_CAR_FF5_Bad <- t.test(Total_FF5_Bad$Cumulative_Abnormal_Log_Returns, mu = 0, alternative = "two.sided")$p.value
+t_stats_CAR_FF1_Good <- t.test(Total_FF1_Good$Cumulative_Abnormal_Log_Returns, mu = 0, alternative = "two.sided")$p.value
+t_stats_CAR_FF1_Neutral <- t.test(Total_FF1_Neutral$Cumulative_Abnormal_Log_Returns, mu = 0, alternative = "two.sided")$p.value
+t_stats_CAR_FF1_Bad <- t.test(Total_FF1_Bad$Cumulative_Abnormal_Log_Returns, mu = 0, alternative = "two.sided")$p.value
 
-t_stats_CAR_MM5_Good <- t.test(Total_MM5_Good$Cumulative_Abnormal_Log_Returns, mu = 0, alternative = "two.sided")$p.value
-t_stats_CAR_MM5_Neutral <- t.test(Total_MM5_Neutral$Cumulative_Abnormal_Log_Returns, mu = 0, alternative = "two.sided")$p.value
-t_stats_CAR_MM5_Bad <- t.test(Total_MM5_Bad$Cumulative_Abnormal_Log_Returns, mu = 0, alternative = "two.sided")$p.value
+t_stats_CAR_MM1_Good <- t.test(Total_MM1_Good$Cumulative_Abnormal_Log_Returns, mu = 0, alternative = "two.sided")$p.value
+t_stats_CAR_MM1_Neutral <- t.test(Total_MM1_Neutral$Cumulative_Abnormal_Log_Returns, mu = 0, alternative = "two.sided")$p.value
+t_stats_CAR_MM1_Bad <- t.test(Total_MM1_Bad$Cumulative_Abnormal_Log_Returns, mu = 0, alternative = "two.sided")$p.value
 
 
 #####################################################################################################################################
