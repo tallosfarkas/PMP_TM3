@@ -72,3 +72,5 @@ tsr[, SPX_lr := log(SPX_Index) - log(shift(SPX_Index, type = "lag"))]
 head(tsr)
 str(tsr)
 summary(tsr)
+
+log_ret_df <- tsr[,-(2:33)] 
