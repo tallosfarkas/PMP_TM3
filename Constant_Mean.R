@@ -200,6 +200,18 @@ for (name in Ticker){
 Avg_CAR_Ret_df <- Avg_CAR_Ret_df %>%
   mutate(day = seq(-10, 10, length.out = n()))
 
+
+industry_CAR <- cumsum(rowMeans(Avg_AR_Ret_df[,1:30], na.rm = TRUE))
+
+industry_CAR_mean <- mean(industry_CAR)
+
+Industry_CAR_df <- data.frame(
+  industry_CAR = industry_CAR)
+ 
+Industry_CAR_df <- Industry_CAR_df %>%
+  mutate(day = seq(-10, 10, length.out = n()))
+
+
 # Pivot to long
 df_long <- Avg_CAR_Ret_df %>%
   pivot_longer(
@@ -213,6 +225,15 @@ ggplot(df_long, aes(x = day, y = CAR_value, color = event)) +
   geom_line() +
   scale_x_continuous(limits = c(-10, 10), breaks = seq(-10, 10, 2)) +
   labs(x = "Day", y = "Avg CAR Return", title = "Average CAR Returns Across Events") +
+  theme_minimal()
+
+
+# Plot Industry
+
+ggplot(Industry_CAR_df, aes(x = day, y = industry_CAR)) +
+  geom_line() +
+  scale_x_continuous(limits = c(-10, 10), breaks = seq(-10, 10, 2)) +
+  labs(x = "Day", y = "Avg CAR Return", title = "Average CAR Returns of the Industry") +
   theme_minimal()
 
 ### Good
