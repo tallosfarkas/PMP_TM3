@@ -216,9 +216,9 @@ Industry_CAR_df <- Industry_CAR_df %>%
 # Plot Industry
 
 ggplot(Industry_CAR_df , aes(x = day)) +
-  geom_line(aes(y = industry_good_CAR, color = "Good News"), size = 1) +
-  geom_line(aes(y = industry_neutral_CAR, color = "Neutral News"), size = 1, linetype = "dashed") +
-  geom_line(aes(y = industry_bad_CAR, color = "Bad News"), size = 1, linetype = "dotted") +
+  geom_line(aes(y = industry_good_CAR, color = "Good News"), linewidth = 1) +
+  geom_line(aes(y = industry_neutral_CAR, color = "Neutral News"), linewidth = 1, linetype = "dashed") +
+  geom_line(aes(y = industry_bad_CAR, color = "Bad News"), linewidth = 1, linetype = "dotted") +
   labs(
     title = "Cumulative Abnormal Returns by News Category (Constant Mean Model)",
     x = "Event Day",
@@ -315,6 +315,40 @@ ggplot(df_long_neutral, aes(x = day, y = CAR_value, color = event)) +
 
 ####### Statistical Significance ###########
 
+######### Check for Normalist before doing a t-test ########
+
+### QQ Plot
+
+## All Companies
+
+# Save to a PDF file (automatically resizes)
+pdf("qqplots.pdf", width = 12, height = 12)
+
+n_cols <- ncol(Avg_CAR_Ret_df[1:30])
+plot_rows <- ceiling(sqrt(n_cols))
+plot_cols <- ceiling(n_cols / plot_rows)
+
+par(mfrow = c(plot_rows, plot_cols), mar = c(3, 3, 2, 1))  # Adjust margins if needed
+
+for (colname in names(Avg_CAR_Ret_df[1:30])) {
+  qqnorm(Avg_CAR_Ret_df[[colname]], main = paste("QQ Plot -", colname))
+  qqline(Avg_CAR_Ret_df[[colname]], col = "red")
+}
+
+dev.off()  # Close the PDF device
+
+
+## Industry
+
+par(mfrow = c(1, 1))        # Only 1 plot
+par(mar = c(5, 4, 4, 2))    # Default margins
+
+# Now try again
+qqnorm(Industry_CAR_df[,1], main = "QQ Plot - Industry")
+qqline(Industry_CAR_df[,1], col = "red")
+
+########## t tests ###########
+
 # Windows
 windows <- list(
   "[-10:10]"  = -10:10,
@@ -322,6 +356,9 @@ windows <- list(
   "[-2:5]"  = -2:5,
   "[-1:1]" = -1:1
 )
+
+
+### Significance for every company and every window
 
 # Add day column to Avg_AR_Ret_df (assumes 21 rows)
 Avg_AR_Ret_df <- Avg_AR_Ret_df %>%
@@ -405,9 +442,9 @@ result_list[[1]] %>%
   tab_header(title = "Significane Overall per Company -10:10")
 
 
-###### T-Test for the Industry ######
+###### T-Tests for the Industry ######
 
-# Overall
+### Overall
 
 # Initialize a data frame to store the industry results for each window
 result_industry_all <- data.frame(window = character(),
@@ -469,7 +506,7 @@ result_industry_all %>%
   tab_header(title = "Significane Overall per Industry")
 
 
-# Good
+### Good
 
 # Add day column to Avg_AR_Ret_df (assumes 21 rows)
 Avg_AR_Ret_good_df <- Avg_AR_Ret_good_df %>%
@@ -535,4 +572,134 @@ result_industry_all_good %>%
   tab_header(title = "Significane Good News per Industry")
 
 
+### bad
+
+# Add day column to Avg_AR_Ret_df (assumes 21 rows)
+Avg_AR_Ret_bad_df <- Avg_AR_Ret_bad_df %>%
+  mutate(day = seq(-10, 10, length.out = n()))
+
+# Initialize a data frame to store the industry results for each window
+result_industry_all_bad <- data.frame(window = character(),
+                                       mean = numeric(),
+                                       st_dev = numeric(),
+                                       p_value = numeric(),
+                                       stringsAsFactors = FALSE)
+
+# Loop over each window
+for (w in names(windows)) {
+  
+  # Current window's day values
+  current_window <- windows[[w]]
+  
+  # Filter rows where 'day' is in the current window and sort by day
+  window_df <- Avg_AR_Ret_bad_df %>%
+    filter(day %in% current_window) %>%
+    arrange(day)
+  
+  # Extract only the numeric data (all columns except 'day')
+  companies_data <- window_df %>% select(-day)
+  
+  # Compute the industry vector: average across companies for each day
+  industry_vec <- rowMeans(companies_data, na.rm = TRUE)
+  
+  # Compute the cumulative sum (CAR) over the window
+  CAR <- cumsum(industry_vec)
+  
+  # Run a one-sample t-test on the CAR (test if mean != 0)
+  tt <- t.test(CAR, mu = 0)
+  
+  # Extract summary values:
+  # Here we use the mean and standard deviation of the CAR vector,
+  # and the p-value from the t-test.
+  mean_val <- mean(CAR, na.rm = TRUE)
+  sd_val   <- sd(CAR, na.rm = TRUE)
+  p_val    <- tt$p.value
+  
+  # Append the result for the current window to result_industry_all
+  result_industry_all_bad <- rbind(result_industry_all_bad,
+                                    data.frame(window = w,
+                                               mean = mean_val,
+                                               st_dev = sd_val,
+                                               p_value = p_val,
+                                               stringsAsFactors = FALSE))
+}
+
+
+result_industry_all_bad %>%
+  gt() %>%
+  tab_style(
+    style = cell_borders(sides = "right", color = "grey80", weight = px(2)),
+    locations = cells_body(columns = everything())
+  ) %>%
+  tab_style(
+    style = cell_borders(sides = "right", color = "grey80", weight = px(2)),
+    locations = cells_column_labels(columns = everything())
+  ) %>%
+  tab_header(title = "Significane bad News per Industry")
+
+
+### neutral
+
+# Add day column to Avg_AR_Ret_df (assumes 21 rows)
+Avg_AR_Ret_neutral_df <- Avg_AR_Ret_neutral_df %>%
+  mutate(day = seq(-10, 10, length.out = n()))
+
+# Initialize a data frame to store the industry results for each window
+result_industry_all_neutral <- data.frame(window = character(),
+                                       mean = numeric(),
+                                       st_dev = numeric(),
+                                       p_value = numeric(),
+                                       stringsAsFactors = FALSE)
+
+# Loop over each window
+for (w in names(windows)) {
+  
+  # Current window's day values
+  current_window <- windows[[w]]
+  
+  # Filter rows where 'day' is in the current window and sort by day
+  window_df <- Avg_AR_Ret_neutral_df %>%
+    filter(day %in% current_window) %>%
+    arrange(day)
+  
+  # Extract only the numeric data (all columns except 'day')
+  companies_data <- window_df %>% select(-day)
+  
+  # Compute the industry vector: average across companies for each day
+  industry_vec <- rowMeans(companies_data, na.rm = TRUE)
+  
+  # Compute the cumulative sum (CAR) over the window
+  CAR <- cumsum(industry_vec)
+  
+  # Run a one-sample t-test on the CAR (test if mean != 0)
+  tt <- t.test(CAR, mu = 0)
+  
+  # Extract summary values:
+  # Here we use the mean and standard deviation of the CAR vector,
+  # and the p-value from the t-test.
+  mean_val <- mean(CAR, na.rm = TRUE)
+  sd_val   <- sd(CAR, na.rm = TRUE)
+  p_val    <- tt$p.value
+  
+  # Append the result for the current window to result_industry_all
+  result_industry_all_neutral <- rbind(result_industry_all_neutral,
+                                    data.frame(window = w,
+                                               mean = mean_val,
+                                               st_dev = sd_val,
+                                               p_value = p_val,
+                                               stringsAsFactors = FALSE))
+}
+
+
+result_industry_all_neutral %>%
+  gt() %>%
+  tab_style(
+    style = cell_borders(sides = "right", color = "grey80", weight = px(2)),
+    locations = cells_body(columns = everything())
+  ) %>%
+  tab_style(
+    style = cell_borders(sides = "right", color = "grey80", weight = px(2)),
+    locations = cells_column_labels(columns = everything())
+  ) %>%
+  tab_header(title = "Significane neutral News per Industry")
 
