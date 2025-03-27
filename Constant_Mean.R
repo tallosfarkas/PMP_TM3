@@ -222,11 +222,21 @@ df_long <- Industry_CAR_df %>%
 
 # Plot Industry
 
-ggplot(df_long, aes(x = day, y = CAR_value, color = event)) +
-  geom_line() +
-  scale_x_continuous(limits = c(-10, 10), breaks = seq(-10, 10, 2)) +
-  labs(x = "Day", y = "Avg CAR Return", title = "Average CAR Returns Across Events") +
-  theme_minimal()
+ggplot(Industry_CAR_df , aes(x = day)) +
+  geom_line(aes(y = industry_good_CAR, color = "Good News"), size = 1) +
+  geom_line(aes(y = industry_neutral_CAR, color = "Neutral News"), size = 1, linetype = "dashed") +
+  geom_line(aes(y = industry_bad_CAR, color = "Bad News"), size = 1, linetype = "dotted") +
+  labs(
+    title = "Cumulative Abnormal Returns by News Category (Constant Mean Model)",
+    x = "Event Day",
+    y = "CAR"
+  ) +
+  scale_color_manual(values = c("Good News" = "darkgreen", "Neutral News" = "black", "Bad News" = "red")) +
+  theme_minimal(base_size = 14) +
+  theme(
+    legend.title = element_blank(),
+    legend.position = "bottom"
+  )
 
 ### Overall
 Avg_CAR_Ret_df <- Avg_CAR_Ret_df %>%
