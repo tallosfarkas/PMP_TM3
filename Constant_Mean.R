@@ -199,27 +199,34 @@ for (name in Ticker){
 ### Industry
 
 industry_CAR <- cumsum(rowMeans(Avg_AR_Ret_df[,1:30], na.rm = TRUE))
-industry_CAR_mean <- mean(industry_CAR)
+industry_good_CAR <- cumsum(rowMeans(Avg_AR_Ret_good_df[,1:30], na.rm = TRUE))
+industry_bad_CAR <- cumsum(rowMeans(Avg_AR_Ret_bad_df[,1:30], na.rm = TRUE))
+industry_neutral_CAR <- cumsum(rowMeans(Avg_AR_Ret_neutral_df[,1:30], na.rm = TRUE))
+
 Industry_CAR_df <- data.frame(
-  industry_CAR = industry_CAR)
+  industry_CAR = industry_CAR,
+  industry_good_CAR = industry_good_CAR,
+  industry_bad_CAR = industry_bad_CAR,
+  industry_neutral_CAR = industry_neutral_CAR
+)
 Industry_CAR_df <- Industry_CAR_df %>%
   mutate(day = seq(-10, 10, length.out = n()))
 
-industry_good_CAR <- cumsum(rowMeans(Avg_AR_Ret_good_df[,1:30], na.rm = TRUE))
-industry_CAR_mean <- mean(industry_CAR)
-Industry_CAR_df <- data.frame(
-  industry_CAR = industry_CAR)
-Industry_CAR_df <- Industry_CAR_df %>%
-  mutate(day = seq(-10, 10, length.out = n()))
+# Pivot to long
+df_long <- Industry_CAR_df %>%
+  pivot_longer(
+    cols = -day,            # all columns except day
+    names_to = "event",     # event names (original column names)
+    values_to = "CAR_value" # the CAR values
+  )
 
 # Plot Industry
 
-ggplot(Industry_CAR_df, aes(x = day, y = industry_CAR)) +
+ggplot(df_long, aes(x = day, y = CAR_value, color = event)) +
   geom_line() +
   scale_x_continuous(limits = c(-10, 10), breaks = seq(-10, 10, 2)) +
-  labs(x = "Day", y = "Avg CAR Return", title = "Average CAR Returns of the Industry") +
+  labs(x = "Day", y = "Avg CAR Return", title = "Average CAR Returns Across Events") +
   theme_minimal()
-
 
 ### Overall
 Avg_CAR_Ret_df <- Avg_CAR_Ret_df %>%
