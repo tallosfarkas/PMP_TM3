@@ -212,13 +212,6 @@ Industry_CAR_df <- data.frame(
 Industry_CAR_df <- Industry_CAR_df %>%
   mutate(day = seq(-10, 10, length.out = n()))
 
-# Pivot to long
-df_long <- Industry_CAR_df %>%
-  pivot_longer(
-    cols = -day,            # all columns except day
-    names_to = "event",     # event names (original column names)
-    values_to = "CAR_value" # the CAR values
-  )
 
 # Plot Industry
 
